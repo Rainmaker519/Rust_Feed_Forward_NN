@@ -1,0 +1,5 @@
+new NeuralNetwork
+    loss_function: LossFunction,
+    number_weights: usize,
+    layers: Vec<Vec<Node>>,
+        
