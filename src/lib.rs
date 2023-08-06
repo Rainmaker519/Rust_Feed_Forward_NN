@@ -1,37 +1,10 @@
+/* 
+
 use std::rc::Rc;
 
-#[derive(Debug)]
-struct Node <'c> {
-    layer: usize,
-    number: usize,
-    node_type: NodeType,
-    pre_activation_value: f64,
-    post_activation_value: f64,
-    delta: f64,
-    bias: f64,
-    bias_delta: f64,
-    incoming_edges: Box<Vec< &'c Edge<'c> >>, //Vec of indices in the next layer this Node connects to
-    outgoing_edges: Box<Vec< &'c Edge<'c> >>, //Vec of indices in the previous layer which connect to this Node
-    activation_type: ActivationType,
-}
-impl Node <'_> {
-    fn new<'c> (layer: usize, number: usize, node_type: NodeType, activation_type: ActivationType) -> Self {
-        Node {
-            layer: layer,
-            number: number,
-            node_type: node_type,
-            pre_activation_value: 0.0,
-            post_activation_value: 0.0,
-            incoming_edges: Box::new(Vec::new()),
-            outgoing_edges: Box::new(Vec::new()),
-            delta: 0.0,
-            bias: 0.0,
-            bias_delta: 0.0,
-            activation_type: activation_type,
-        }
-    }
 
-    fn add_incoming_edge<'incoming_edge_life> (&'incoming_edge_life mut self, edge_incoming: Edge<'incoming_edge_life>) -> () {
+
+    fn add_incoming_edge (&mut self, edge_incoming: Edge) -> () {
         //check if edge exists already
         for edge in &mut * self.incoming_edges {
             match edge.node_from {
@@ -63,17 +36,9 @@ impl Node <'_> {
             }
         }
         //if make it to here, then edge should be added
-        match Box::froself.incoming_edges {
-            Some(x) => {
-
-            }
-            _ => {
-
-            }
-        }
-
-        }
+        
         ()
+        }
         //ahaha
     }
 
@@ -224,6 +189,7 @@ impl Node <'_> {
     }
     //
 }
+}
 
 
 
@@ -277,7 +243,7 @@ impl Edge <'_> {
     }
 }
 
-
+*/
 
 
 
