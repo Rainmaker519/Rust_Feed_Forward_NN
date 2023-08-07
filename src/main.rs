@@ -74,7 +74,7 @@ impl Node {
         }
     }
 
-    fn get_weights(self, position: usize, weights: &mut Vec<f64>) -> usize {
+    fn get_weights(& self, position: usize, weights: &mut Vec<f64>) -> usize {
         let mut weight_count = 0;
 
         //the first weight set will be the bias if
@@ -84,7 +84,8 @@ impl Node {
             weight_count = 1;
         }
 
-        for edge in self.outgoing_edges {
+        let edges_full_slice = &self.outgoing_edges;
+        for edge in edges_full_slice {
             weights[position + weight_count] = edge.weight;
             weight_count = weight_count + 1;
         }
@@ -172,7 +173,7 @@ impl NeuralNetwork {
         let num_layers: usize = hidden_layer_sizes.len() + 2;
 
         for layer in 0..num_layers {
-            println!("Making layer {layer}: ");
+            //println!("Making layer {layer}: ");
             let layer_size: usize;
             let node_type: NodeType;
             let activation_type: ActivationType;
@@ -198,7 +199,7 @@ impl NeuralNetwork {
 
             let mut new_layer = RefCell::new(Vec::new());
             for j in 0..layer_size {
-                println!("  Pushing node {j} to layer {layer}.");
+                //println!("  Pushing node {j} to layer {layer}.");
                 new_layer.get_mut().push(Node::new(layer, j, node_type.clone(), activation_type.clone()));
             }
 
@@ -207,8 +208,9 @@ impl NeuralNetwork {
             //if not the input layer connect all the nodes from the previous layer to this layer
             if layer != 0 {
 
-                let all_layers = nn.layers.get_mut();
+                
                 {
+                    let all_layers = nn.layers.get_mut();
                     let from_node_layer_option = all_layers.get_mut(layer - 1);
                     match from_node_layer_option {
                         Some(from_node_layer_ref) => {
@@ -217,8 +219,12 @@ impl NeuralNetwork {
                                 let from_node_ref = all_layers[layer-1].get_mut().get_mut(from_node_num);
                                 match from_node_ref {
                                     Some(from_node) => {
-                                        for i in 0..hidden_layer_sizes[layer] {
-                                            from_node.add_edge_outgoing((layer,i));
+                                        let lm2 = hidden_layer_sizes[layer]-1;
+                                        println!("{lm2}");
+                                        for to_node_num in 0..(hidden_layer_sizes[layer]-1) {
+                                            let lm1 = layer - 1;
+                                            println!("add edge from ({lm1},{from_node_num} to ({layer},{to_node_num}).");
+                                            from_node.add_edge_outgoing((layer,to_node_num));
                                         }
                                     },
                                     None => panic!("AJAJA mark 1"),
@@ -228,23 +234,27 @@ impl NeuralNetwork {
                         _ => panic!("aaaaassssssssddddddddddss")
                     }
                 }
-                let to_node_layer_option = all_layers.get_mut(layer);
-                match to_node_layer_option {
-                    Some(to_node_layer_ref) => {
-                        let to_node_layer = to_node_layer_ref.get_mut();
-                        for to_node_num in 0..to_node_layer.len() {
-                            let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_num);
-                            match to_node_ref {
-                                Some(to_node) => {
-                                    for i in 0..hidden_layer_sizes[layer-1] {
-                                        to_node.add_edge_incoming((layer-1,i));
-                                    }
-                                },
-                                None => panic!("AJAJA mark 2"),
-                            } 
-                        }
-                    },
-                    _ => panic!("zzzzzzzssssssssddddddddddd")
+                println!("AAAAAAAAAAAAAAAAHHHHHHHHHHHERERERERERE~~~~!@");
+                {
+                    let all_layers = nn.layers.get_mut();
+                    let to_node_layer_option = all_layers.get_mut(layer);
+                    match to_node_layer_option {
+                        Some(to_node_layer_ref) => {
+                            let to_node_layer = to_node_layer_ref.get_mut();
+                            for to_node_num in 0..to_node_layer.len() {
+                                let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_num);
+                                match to_node_ref {
+                                    Some(to_node) => {
+                                        for to_node_num in 0..(hidden_layer_sizes[layer-1]-1) {
+                                            to_node.add_edge_incoming((layer-1,to_node_num));
+                                        }
+                                    },
+                                    None => panic!("AJAJA mark 2"),
+                                } 
+                            }
+                        },
+                        _ => panic!("zzzzzzzssssssssddddddddddd")
+                    }
                 }
             }
         }
@@ -334,7 +344,7 @@ impl NeuralNetwork {
 }
 
 fn main() {
-    let nn = NeuralNetwork::new(3, vec!(4,5,6), 2, LossFunction::L1);
+    let mut nn = NeuralNetwork::new(3, vec!(4,5,6), 2, LossFunction::L1);
     //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
     //println!("{:#?}",nn);
     println!("{:#?}",nn.get_weights());
