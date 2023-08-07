@@ -1,4 +1,4 @@
-use std::mem;
+use std::{mem, cell::{RefCell, Ref}, borrow::BorrowMut};
 
 /// ENUM SECTION ------------------------------------------------
 #[derive(PartialEq,Eq,Debug,Clone)]
@@ -60,6 +60,70 @@ impl Node {
     fn add_edge_incoming (&mut self, location_from: (usize,usize)) -> () {
         self.incoming_edges.push(Edge::new(location_from,(self.layer,self.number)));
     }
+
+    //Reset the values which need to be recalculated for each forward and backward pass.
+    //Will also reset the deltas for outgoing edges.
+    fn reset (&mut self) -> () {
+        self.pre_activation_value = 0.0;
+        self.post_activation_value = 0.0;
+        self.delta = 0.0;
+        self.bias_delta = 0.0;
+
+        for i in &mut * self.outgoing_edges {
+            i.weight_delta = 0.0;
+        }
+    }
+
+    fn get_weights(self, position: usize, weights: &mut Vec<f64>) -> usize {
+        let mut weight_count = 0;
+
+        //the first weight set will be the bias if
+        //it is a hidden node
+        if self.node_type == NodeType::HIDDEN {
+            weights[position] = self.bias;
+            weight_count = 1;
+        }
+
+        for edge in self.outgoing_edges {
+            weights[position + weight_count] = edge.weight;
+            weight_count = weight_count + 1;
+        }
+
+        return weight_count;
+    }
+    //works in the same way as get_weights() but for the deltas instead
+    fn get_deltas(self, position: usize, deltas: &mut Vec<f64>) -> usize {
+        let mut delta_count = 0;
+
+        //the first weight set will be the bias if
+        //it is a hidden node
+        if self.node_type == NodeType::HIDDEN {
+            deltas[position] = self.bias_delta;
+            delta_count = 1;
+        }
+
+        for edge in self.outgoing_edges {
+            deltas[position + delta_count] = edge.weight_delta;
+            delta_count = delta_count + 1;
+        }
+
+        return delta_count;
+    }
+
+    fn set_weights(&mut self, position: usize, weights: Vec<f64>) -> usize {
+        let mut weight_count: usize = 0;
+
+        if self.node_type == NodeType::HIDDEN {
+            self.bias = weights[position];
+            weight_count =  1;
+        }
+
+        for edge in &mut self.outgoing_edges {
+            edge.weight = weights[position + weight_count];
+            weight_count = weight_count + 1;
+        }
+        return weight_count
+    }
 }
 
 #[derive(Debug,Clone)]
@@ -93,14 +157,14 @@ impl Edge {
 struct NeuralNetwork {
     loss_function: LossFunction,
     number_weights: usize,
-    layers: Vec<Vec<Node>>,
+    layers: RefCell<Vec<RefCell<Vec<Node>>>>,
     number_inputs: usize,
 }
 impl NeuralNetwork {
     fn new (input_layer_size: usize, hidden_layer_sizes: Vec<usize>, output_layer_size: usize, loss_function: LossFunction) -> Self {
         let mut nn = NeuralNetwork {
             loss_function: loss_function,
-            layers: Vec::new(),
+            layers: RefCell::new(Vec::new()),
             number_weights: 0,
             number_inputs: input_layer_size,
         };
@@ -132,46 +196,148 @@ impl NeuralNetwork {
                 activation_type = ActivationType::SIGMOID;
             }
 
-            let mut new_layer: Vec<Node> = Vec::new();
+            let mut new_layer = RefCell::new(Vec::new());
             for j in 0..layer_size {
                 println!("  Pushing node {j} to layer {layer}.");
-                new_layer.push(Node::new(layer, j, node_type.clone(), activation_type.clone()));
+                new_layer.get_mut().push(Node::new(layer, j, node_type.clone(), activation_type.clone()));
             }
 
-            nn.layers.push(new_layer);
+            nn.layers.get_mut().push(new_layer);
 
             //if not the input layer connect all the nodes from the previous layer to this layer
             if layer != 0 {
-                for from_node_num in 0..nn.layers[layer - 1].len() {
-                    for to_node_num in 0..nn.layers[layer].len() {
-                        nn.layers[layer-1][from_node_num].add_edge_outgoing((layer,to_node_num));
-                        nn.layers[layer][to_node_num].add_edge_incoming((layer-1,from_node_num));
+
+                let all_layers = nn.layers.get_mut();
+                {
+                    let from_node_layer_option = all_layers.get_mut(layer - 1);
+                    match from_node_layer_option {
+                        Some(from_node_layer_ref) => {
+                            let from_node_layer = from_node_layer_ref.get_mut();
+                            for from_node_num in 0..from_node_layer.len() {
+                                let from_node_ref = all_layers[layer-1].get_mut().get_mut(from_node_num);
+                                match from_node_ref {
+                                    Some(from_node) => {
+                                        for i in 0..hidden_layer_sizes[layer] {
+                                            from_node.add_edge_outgoing((layer,i));
+                                        }
+                                    },
+                                    None => panic!("AJAJA mark 1"),
+                                }
+                            }
+                        },
+                        _ => panic!("aaaaassssssssddddddddddss")
                     }
                 }
+                let to_node_layer_option = all_layers.get_mut(layer);
+                match to_node_layer_option {
+                    Some(to_node_layer_ref) => {
+                        let to_node_layer = to_node_layer_ref.get_mut();
+                        for to_node_num in 0..to_node_layer.len() {
+                            let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_num);
+                            match to_node_ref {
+                                Some(to_node) => {
+                                    for i in 0..hidden_layer_sizes[layer-1] {
+                                        to_node.add_edge_incoming((layer-1,i));
+                                    }
+                                },
+                                None => panic!("AJAJA mark 2"),
+                            } 
+                        }
+                    },
+                    _ => panic!("zzzzzzzssssssssddddddddddd")
+                }
             }
-
         }
         return nn
     }
 
-    fn get_node_ref(& self, node_location: (usize,usize)) -> & Node {
+    fn get_node_ref(&mut self, node_location: (usize,usize)) -> & Node {
         let (layer_num,node_num) = node_location;
-        & self.layers[layer_num][node_num]
+        let layer_option = self.layers.get_mut().get_mut(layer_num);
+        match layer_option {
+            Some(layer) => {
+                let node_option = layer.get_mut().get(node_num);
+
+                match node_option {
+                    Some(node) => {
+                        node
+                    },
+                    _ => panic!("get_node_ref dead 1")
+                }
+            },
+            None => panic!("get_node_ref dead 2"),
+        }
     }
     fn get_mut_node_ref(&mut self, node_location: (usize,usize)) -> &mut Node {
         let (layer_num,node_num) = node_location;
-        &mut self.layers[layer_num][node_num]
+        let all_layers = self.layers.get_mut();
+        let layer_option = all_layers.get_mut(layer_num);
+        match layer_option {
+            Some(layer) => {
+                let node_option = layer.get_mut().get_mut(node_num);
+
+                match node_option {
+                    Some(node) => {
+                        node
+                    },
+                    _ => panic!("jjjjjjjjjjjjjj")
+                }
+            },
+            _ => panic!("ajjjjajjjjajjj")
+        }
     }
 
     fn get_number_inputs(& self) -> usize {
         self.number_inputs
+    }
+
+    fn get_weights(&mut self) -> Vec<f64> {
+        let mut weights: Vec<f64> = Vec::new();
+        let mut position: usize = 0;
+
+
+        for layer_counter in 0..self.layers.get_mut().len() {
+
+            //current layer
+            let current_layer_option = self.layers.get_mut().get_mut(layer_counter);
+            match current_layer_option {
+
+                Some(layer_refcell) => {
+
+                    let layer = layer_refcell.get_mut();
+
+                    for node_counter in 0..layer.len() {
+
+                        let current_node_option = layer.get(node_counter);
+                        match current_node_option {
+
+                            Some(node_ref) => {
+
+                                let n_weights = node_ref.get_weights(position.clone(), &mut weights);
+
+                                position = position + n_weights;
+                
+                                if position > n_weights {
+                                    //throw nn exception
+                                    panic!("Trying to get more weights than exist. [get_weights() from NN]")
+                                }
+                            },
+                            _ => panic!("ahahagagaga")
+                        }
+                    } 
+                },
+                _ => panic!("getweights nn die die")
+            }
+        }
+        weights
     }
 }
 
 fn main() {
     let nn = NeuralNetwork::new(3, vec!(4,5,6), 2, LossFunction::L1);
     //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
-    println!("{:#?}",nn);
+    //println!("{:#?}",nn);
+    println!("{:#?}",nn.get_weights());
 }
 
 
@@ -180,3 +346,13 @@ fn main() {
 
 
 
+/*
+TO DO:
+
+1. Implement get/set weight and delta functions for nn using the node implementation.
+
+2. Check the Java implementation to figure out what else I need to make to start the assignment
+for reals.
+
+
+*/
