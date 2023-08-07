@@ -62,7 +62,7 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug,Clone)]
 struct Edge {
     weight: f64,
     weight_delta: f64,
@@ -104,7 +104,9 @@ impl NeuralNetwork {
             number_weights: 0,
             number_inputs: input_layer_size,
         };
+
         let num_layers: usize = hidden_layer_sizes.len() + 2;
+
         for layer in 0..num_layers {
             println!("Making layer {layer}: ");
             let layer_size: usize;
@@ -138,8 +140,16 @@ impl NeuralNetwork {
 
             nn.layers.push(new_layer);
 
-            //till need to connect all the nodes created together
-            //for the feed forward version of the network.
+            //if not the input layer connect all the nodes from the previous layer to this layer
+            if layer != 0 {
+                for from_node_num in 0..nn.layers[layer - 1].len() {
+                    for to_node_num in 0..nn.layers[layer].len() {
+                        nn.layers[layer-1][from_node_num].add_edge_outgoing((layer,to_node_num));
+                        nn.layers[layer][to_node_num].add_edge_incoming((layer-1,from_node_num));
+                    }
+                }
+            }
+
         }
         return nn
     }
@@ -160,7 +170,8 @@ impl NeuralNetwork {
 
 fn main() {
     let nn = NeuralNetwork::new(3, vec!(4,5,6), 2, LossFunction::L1);
-    println!("{:?}",nn.get_node_ref((0,1)));
+    //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
+    println!("{:#?}",nn);
 }
 
 
