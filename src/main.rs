@@ -207,7 +207,18 @@ impl NeuralNetwork {
 
             //if not the input layer connect all the nodes from the previous layer to this layer
             if layer != 0 {
-
+                //already have layer
+                //loop through to_node_num and from_node_num
+                let mut layer_sizes: Vec<usize>;
+                layer_sizes = Vec::new();
+                {
+                    let all_layers = nn.layers.get_mut();
+                    let derefed = &mut *all_layers;
+                    for layer in derefed {
+                        let l = layer.get_mut();
+                        layer_sizes.push(l.len());
+                    }
+                }
                 
                 {
                     let all_layers = nn.layers.get_mut();
@@ -215,17 +226,15 @@ impl NeuralNetwork {
                     match from_node_layer_option {
                         Some(from_node_layer_ref) => {
                             let from_node_layer = from_node_layer_ref.get_mut();
-                            for from_node_num in 0..from_node_layer.len() {
+                            for from_node_num in 0..(from_node_layer.len()-1) {
                                 let from_node_ref = all_layers[layer-1].get_mut().get_mut(from_node_num);
                                 match from_node_ref {
                                     Some(from_node) => {
-                                        let lm2 = hidden_layer_sizes[layer]-1;
-                                        println!("{lm2}");
-                                        for to_node_num in 0..(hidden_layer_sizes[layer]-1) {
-                                            let lm1 = layer - 1;
-                                            println!("add edge from ({lm1},{from_node_num} to ({layer},{to_node_num}).");
-                                            from_node.add_edge_outgoing((layer,to_node_num));
+                                        for to_node_num in 0..(layer_sizes[layer]-1) {
+                                            from_node.add_edge_outgoing((layer,to_node_num)); 
                                         }
+                                        print!("added outgoing edges to: ");
+                                        println!("{:?}",from_node);
                                     },
                                     None => panic!("AJAJA mark 1"),
                                 }
@@ -241,13 +250,15 @@ impl NeuralNetwork {
                     match to_node_layer_option {
                         Some(to_node_layer_ref) => {
                             let to_node_layer = to_node_layer_ref.get_mut();
-                            for to_node_num in 0..to_node_layer.len() {
-                                let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_num);
+                            for to_node_layer_num in 0..to_node_layer.len() {
+                                let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_layer_num);
                                 match to_node_ref {
                                     Some(to_node) => {
-                                        for to_node_num in 0..(hidden_layer_sizes[layer-1]-1) {
-                                            to_node.add_edge_incoming((layer-1,to_node_num));
+                                        for from_node_num in 0..(layer_sizes[layer-1]-1) {
+                                            to_node.add_edge_incoming((layer-1,from_node_num)); 
                                         }
+                                        print!("added incoming edges to: ");
+                                        println!("{:?}",to_node);
                                     },
                                     None => panic!("AJAJA mark 2"),
                                 } 
