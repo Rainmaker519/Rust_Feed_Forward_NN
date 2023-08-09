@@ -1,4 +1,8 @@
-use std::{mem, cell::{RefCell, Ref}, borrow::BorrowMut};
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
+use std::cell::RefCell;
+//use std::{mem, cell::{RefCell, Ref}, borrow::BorrowMut};
 
 /// ENUM SECTION ------------------------------------------------
 #[derive(PartialEq,Eq,Debug,Clone)]
@@ -354,7 +358,9 @@ impl NeuralNetwork {
 
                                 //println!();
                                 
-                
+                                //Really dont know what this exception was supposed to catch.
+                                //Keeping in case I'm misusing it and it's important later.
+                                //
                                 //if position > n_weights {
                                     //throw nn exception
                                     //panic!("Trying to get more weights than exist. [get_weights() from NN]")
