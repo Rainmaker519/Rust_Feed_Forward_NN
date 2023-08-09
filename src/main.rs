@@ -74,19 +74,23 @@ impl Node {
         }
     }
 
-    fn get_weights(& self, position: usize, weights: &mut Vec<f64>) -> usize {
+    fn get_weights(& self, weights: &mut Vec<f64>) -> usize {
         let mut weight_count = 0;
 
         //the first weight set will be the bias if
         //it is a hidden node
         if self.node_type == NodeType::HIDDEN {
-            weights[position] = self.bias;
+            weights.push(self.bias);
             weight_count = 1;
         }
 
         let edges_full_slice = &self.outgoing_edges;
+        //println!("{:?}",edges_full_slice);
+
         for edge in edges_full_slice {
-            weights[position + weight_count] = edge.weight;
+            //println!("{:?}",edge);
+            //println!("---");
+            weights.push(edge.weight);
             weight_count = weight_count + 1;
         }
 
@@ -226,15 +230,16 @@ impl NeuralNetwork {
                     match from_node_layer_option {
                         Some(from_node_layer_ref) => {
                             let from_node_layer = from_node_layer_ref.get_mut();
-                            for from_node_num in 0..(from_node_layer.len()-1) {
+                            
+                            for from_node_num in 0..(from_node_layer.len()) {
                                 let from_node_ref = all_layers[layer-1].get_mut().get_mut(from_node_num);
                                 match from_node_ref {
                                     Some(from_node) => {
-                                        for to_node_num in 0..(layer_sizes[layer]-1) {
+                                        for to_node_num in 0..(layer_sizes[layer]) {
                                             from_node.add_edge_outgoing((layer,to_node_num)); 
                                         }
-                                        print!("added outgoing edges to: ");
-                                        println!("{:?}",from_node);
+                                        //print!("added outgoing edges to: ");
+                                        //println!("{:?}",from_node);
                                     },
                                     None => panic!("AJAJA mark 1"),
                                 }
@@ -243,7 +248,7 @@ impl NeuralNetwork {
                         _ => panic!("aaaaassssssssddddddddddss")
                     }
                 }
-                println!("AAAAAAAAAAAAAAAAHHHHHHHHHHHERERERERERE~~~~!@");
+                //println!("AAAAAAAAAAAAAAAAHHHHHHHHHHHERERERERERE~~~~!@");
                 {
                     let all_layers = nn.layers.get_mut();
                     let to_node_layer_option = all_layers.get_mut(layer);
@@ -254,11 +259,11 @@ impl NeuralNetwork {
                                 let to_node_ref = all_layers[layer].get_mut().get_mut(to_node_layer_num);
                                 match to_node_ref {
                                     Some(to_node) => {
-                                        for from_node_num in 0..(layer_sizes[layer-1]-1) {
+                                        for from_node_num in 0..(layer_sizes[layer-1]) {
                                             to_node.add_edge_incoming((layer-1,from_node_num)); 
                                         }
-                                        print!("added incoming edges to: ");
-                                        println!("{:?}",to_node);
+                                        //print!("added incoming edges to: ");
+                                        //println!("{:?}",to_node);
                                     },
                                     None => panic!("AJAJA mark 2"),
                                 } 
@@ -334,14 +339,29 @@ impl NeuralNetwork {
 
                             Some(node_ref) => {
 
-                                let n_weights = node_ref.get_weights(position.clone(), &mut weights);
+                                
+
+                                //println!("layer: {layer_counter}, number: {node_counter}");
+                                
+
+                                let n_weights = node_ref.get_weights(&mut weights);
 
                                 position = position + n_weights;
+
+                                //println!("position: {position}");
+                                //print!("weights: ");
+                                //println!("{:?}",weights);
+
+                                //println!();
+                                
                 
-                                if position > n_weights {
+                                //if position > n_weights {
                                     //throw nn exception
-                                    panic!("Trying to get more weights than exist. [get_weights() from NN]")
-                                }
+                                    //panic!("Trying to get more weights than exist. [get_weights() from NN]")
+                                //}
+
+                                //moved this below the if statement above, not sure if thats good but if not this is to know to move it back
+                                
                             },
                             _ => panic!("ahahagagaga")
                         }
@@ -349,16 +369,17 @@ impl NeuralNetwork {
                 },
                 _ => panic!("getweights nn die die")
             }
+            //println!("-----------------------------");
         }
         weights
     }
 }
 
 fn main() {
-    let mut nn = NeuralNetwork::new(3, vec!(4,5,6), 2, LossFunction::L1);
+    let mut nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
     //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
     //println!("{:#?}",nn);
-    println!("{:#?}",nn.get_weights());
+    println!("{:#?}",nn.get_weights().len());
 }
 
 
@@ -370,9 +391,11 @@ fn main() {
 /*
 TO DO:
 
-1. Implement get/set weight and delta functions for nn using the node implementation.
+DONE || 1. Implement get weight and delta functions for nn using the node implementation.
 
-2. Check the Java implementation to figure out what else I need to make to start the assignment
+2. Implement set weight and delta functions for nn using the node implementation.
+
+3. Check the Java implementation to figure out what else I need to make to start the assignment
 for reals.
 
 
