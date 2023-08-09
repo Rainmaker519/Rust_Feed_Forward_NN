@@ -37,8 +37,8 @@ struct Node {
     delta: f64,
     bias: f64,
     bias_delta: f64,
-    incoming_edges: Vec<Edge>, //Vec of indices in the next layer this Node connects to
-    outgoing_edges: Vec<Edge>, //Vec of indices in the previous layer which connect to this Node
+    incoming_edges: Vec<Edge>,
+    outgoing_edges: Vec<Edge>,
     activation_type: ActivationType,
 }
 impl Node {
@@ -325,38 +325,25 @@ impl NeuralNetwork {
         let mut weights: Vec<f64> = Vec::new();
         let mut position: usize = 0;
 
-
         for layer_counter in 0..self.layers.get_mut().len() {
-
-            //current layer
             let current_layer_option = self.layers.get_mut().get_mut(layer_counter);
+
             match current_layer_option {
 
                 Some(layer_refcell) => {
-
                     let layer = layer_refcell.get_mut();
 
                     for node_counter in 0..layer.len() {
-
                         let current_node_option = layer.get(node_counter);
+
                         match current_node_option {
 
                             Some(node_ref) => {
-
-                                
-
-                                //println!("layer: {layer_counter}, number: {node_counter}");
-                                
-
                                 let n_weights = node_ref.get_weights(&mut weights);
 
                                 position = position + n_weights;
 
-                                //println!("position: {position}");
-                                //print!("weights: ");
-                                //println!("{:?}",weights);
-
-                                //println!();
+                                //println!("layer: {layer_counter}, number: {node_counter}"); println!("position: {position}"); print!("weights: "); println!("{:?}",weights);
                                 
                                 //Really dont know what this exception was supposed to catch.
                                 //Keeping in case I'm misusing it and it's important later.
@@ -364,10 +351,7 @@ impl NeuralNetwork {
                                 //if position > n_weights {
                                     //throw nn exception
                                     //panic!("Trying to get more weights than exist. [get_weights() from NN]")
-                                //}
-
-                                //moved this below the if statement above, not sure if thats good but if not this is to know to move it back
-                                
+                                //}                                
                             },
                             _ => panic!("ahahagagaga")
                         }
@@ -375,17 +359,38 @@ impl NeuralNetwork {
                 },
                 _ => panic!("getweights nn die die")
             }
-            //println!("-----------------------------");
         }
         weights
     }
 }
 
-fn main() {
+fn test_set_weights() -> bool {
+    false
+}
+fn test_get_weights() -> bool {
     let mut nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
+    if nn.get_weights().len() != 68 {
+        false;
+    }
+    let mut nn = NeuralNetwork::new(3, vec!(2,2), 2, LossFunction::L1);
+    if nn.get_weights().len() != 18 {
+        false;
+    }
+    true
+}
+
+fn main() {
+    let nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
     //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
     //println!("{:#?}",nn);
-    println!("{:#?}",nn.get_weights().len());
+    let get_weights_test_result = test_get_weights();
+    print!("GetWeightsTest: ");
+    if get_weights_test_result {
+        println!("Pass")
+    }
+    else {
+        println!("Fail")
+    }
 }
 
 
