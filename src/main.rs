@@ -100,38 +100,52 @@ impl Node {
 
         return weight_count;
     }
+
     //works in the same way as get_weights() but for the deltas instead
-    fn get_deltas(self, position: usize, deltas: &mut Vec<f64>) -> usize {
+    fn get_deltas(& self, deltas: &mut Vec<f64>) -> usize {
         let mut delta_count = 0;
 
         //the first weight set will be the bias if
         //it is a hidden node
         if self.node_type == NodeType::HIDDEN {
-            deltas[position] = self.bias_delta;
+            deltas.push(self.bias);
             delta_count = 1;
         }
 
-        for edge in self.outgoing_edges {
-            deltas[position + delta_count] = edge.weight_delta;
+        let edges_full_slice = &self.outgoing_edges;
+        //println!("{:?}",edges_full_slice);
+
+        for edge in edges_full_slice {
+            //println!("{:?}",edge);
+            //println!("---");
+            deltas.push(edge.weight_delta);
             delta_count = delta_count + 1;
         }
 
         return delta_count;
     }
+    
+    fn set_weights(&mut self, position: usize, weights: &mut Vec<f64>) -> usize {
+        let mut weight_count = 0;
 
-    fn set_weights(&mut self, position: usize, weights: Vec<f64>) -> usize {
-        let mut weight_count: usize = 0;
-
+        //the first weight set will be the bias if
+        //it is a hidden node
         if self.node_type == NodeType::HIDDEN {
             self.bias = weights[position];
-            weight_count =  1;
+            weight_count = 1;
         }
 
-        for edge in &mut self.outgoing_edges {
+        let edges_full_slice = &mut self.outgoing_edges;
+        //println!("{:?}",edges_full_slice);
+
+        for edge in edges_full_slice {
+            //println!("{:?}",edge);
+            //println!("---");
             edge.weight = weights[position + weight_count];
             weight_count = weight_count + 1;
         }
-        return weight_count
+
+        return weight_count;
     }
 }
 
@@ -327,31 +341,17 @@ impl NeuralNetwork {
 
         for layer_counter in 0..self.layers.get_mut().len() {
             let current_layer_option = self.layers.get_mut().get_mut(layer_counter);
-
             match current_layer_option {
-
                 Some(layer_refcell) => {
                     let layer = layer_refcell.get_mut();
 
                     for node_counter in 0..layer.len() {
                         let current_node_option = layer.get(node_counter);
-
                         match current_node_option {
-
                             Some(node_ref) => {
                                 let n_weights = node_ref.get_weights(&mut weights);
 
-                                position = position + n_weights;
-
-                                //println!("layer: {layer_counter}, number: {node_counter}"); println!("position: {position}"); print!("weights: "); println!("{:?}",weights);
-                                
-                                //Really dont know what this exception was supposed to catch.
-                                //Keeping in case I'm misusing it and it's important later.
-                                //
-                                //if position > n_weights {
-                                    //throw nn exception
-                                    //panic!("Trying to get more weights than exist. [get_weights() from NN]")
-                                //}                                
+                                position = position + n_weights;                             
                             },
                             _ => panic!("ahahagagaga")
                         }
@@ -362,12 +362,38 @@ impl NeuralNetwork {
         }
         weights
     }
+
+    fn set_weights(&mut self, weights: &mut Vec<f64>) -> () {
+        let mut position: usize = 0;
+
+        for layer_counter in 0..self.layers.get_mut().len() {
+            let current_layer_option = self.layers.get_mut().get_mut(layer_counter);
+            match current_layer_option {
+                Some(layer_refcell) => {
+                    let layer = layer_refcell.get_mut();
+
+                    for node_counter in 0..layer.len() {
+                        let current_node_option = layer.get_mut(node_counter);
+                        match current_node_option {
+                            Some(node_ref) => {
+                                let n_weights = node_ref.set_weights(position, weights);
+                                position = position + n_weights;                             
+                            },
+                            _ => panic!("ahahagagaga")
+                        }
+                    }
+                },
+                _ => panic!("setweights nn die die")
+            }
+        }
+    }
 }
+
 
 fn test_set_weights() -> bool {
     false
 }
-fn test_get_weights() -> bool {
+fn test_get_weights_nn() -> bool {
     let mut nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
     if nn.get_weights().len() != 68 {
         false;
@@ -380,17 +406,31 @@ fn test_get_weights() -> bool {
 }
 
 fn main() {
-    let nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
+    println!();
+    println!("---------Main Run Output Start---------\n");
+    let mut nn = NeuralNetwork::new(3, vec!(4,2,7), 3, LossFunction::L1);
     //println!("{:#?}",nn.get_node_ref((1,1)).outgoing_edges);
     //println!("{:#?}",nn);
-    let get_weights_test_result = test_get_weights();
+
+    //get_weights_test
+    let get_weights_test_result = test_get_weights_nn();
     print!("GetWeightsTest: ");
     if get_weights_test_result {
-        println!("Pass")
+        println!("Pass\n")
     }
     else {
-        println!("Fail")
+        println!("Fail\n")
     }
+    
+    let mut a_weights: Vec<f64> = vec!(1.5; 68);
+    
+
+    nn.set_weights(&mut a_weights);
+
+    let b_weights = nn.get_weights();
+    println!("{:?}",b_weights);
+    //set_weights_test
+    
 }
 
 
