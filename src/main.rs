@@ -44,9 +44,9 @@ struct Node {
 impl Node {
     fn new (layer: usize, number: usize, node_type: NodeType, activation_type: ActivationType) -> Self {
         Node {
-            layer: layer,
-            number: number,
-            node_type: node_type,
+            layer,
+            number,
+            node_type,
             pre_activation_value: 0.0,
             post_activation_value: 0.0,
             incoming_edges: Vec::new(),
@@ -54,7 +54,7 @@ impl Node {
             delta: 0.0,
             bias: 0.0,
             bias_delta: 0.0,
-            activation_type: activation_type,
+            activation_type,
         }
     }
 
@@ -166,7 +166,7 @@ impl Edge {
         }
     }
 
-    fn propogate_backward(delta: f64) -> () {
+    fn propagate_backward(delta: f64) -> () {
         //implement for P1-2
     }
 }
@@ -186,7 +186,7 @@ struct NeuralNetwork {
 impl NeuralNetwork {
     fn new (input_layer_size: usize, hidden_layer_sizes: Vec<usize>, output_layer_size: usize, loss_function: LossFunction) -> Self {
         let mut nn = NeuralNetwork {
-            loss_function: loss_function,
+            loss_function,
             layers: RefCell::new(Vec::new()),
             number_weights: 0,
             number_inputs: input_layer_size,
@@ -235,8 +235,8 @@ impl NeuralNetwork {
                 layer_sizes = Vec::new();
                 {
                     let all_layers = nn.layers.get_mut();
-                    let derefed = &mut *all_layers;
-                    for layer in derefed {
+                    let accessed = &mut *all_layers;
+                    for layer in accessed {
                         let l = layer.get_mut();
                         layer_sizes.push(l.len());
                     }
@@ -259,11 +259,11 @@ impl NeuralNetwork {
                                         //print!("added outgoing edges to: ");
                                         //println!("{:?}",from_node);
                                     },
-                                    None => panic!("AJAJA mark 1"),
+                                    None => panic!("cap aj mark 1"),
                                 }
                             }
                         },
-                        _ => panic!("aaaaassssssssddddddddddss")
+                        _ => panic!("long a d s")
                     }
                 }
                 //println!("AAAAAAAAAAAAAAAAHHHHHHHHHHHERERERERERE~~~~!@");
@@ -283,11 +283,11 @@ impl NeuralNetwork {
                                         //print!("added incoming edges to: ");
                                         //println!("{:?}",to_node);
                                     },
-                                    None => panic!("AJAJA mark 2"),
+                                    None => panic!("cap aj mark 2"),
                                 } 
                             }
                         },
-                        _ => panic!("zzzzzzzssssssssddddddddddd")
+                        _ => panic!("long z s d")
                     }
                 }
             }
@@ -324,10 +324,10 @@ impl NeuralNetwork {
                     Some(node) => {
                         node
                     },
-                    _ => panic!("jjjjjjjjjjjjjj")
+                    _ => panic!("jj spot")
                 }
             },
-            _ => panic!("ajjjjajjjjajjj")
+            _ => panic!("aj spot")
         }
     }
 
@@ -353,11 +353,11 @@ impl NeuralNetwork {
 
                                 position = position + n_weights;                             
                             },
-                            _ => panic!("ahahagagaga")
+                            _ => panic!("ah ah ah ah")
                         }
                     } 
                 },
-                _ => panic!("getweights nn die die")
+                _ => panic!("get weights nn die die")
             }
         }
         weights
@@ -379,11 +379,11 @@ impl NeuralNetwork {
                                 let n_weights = node_ref.set_weights(position, weights);
                                 position = position + n_weights;                             
                             },
-                            _ => panic!("ahahagagaga")
+                            _ => panic!("a ha ha ha")
                         }
                     }
                 },
-                _ => panic!("setweights nn die die")
+                _ => panic!("set weights nn die die")
             }
         }
     }
@@ -422,6 +422,9 @@ fn main() {
         println!("Fail\n")
     }
     
+    //The set_weights function WILL accept lists of weights over the
+    //  correct size without crashing rn, need to add exception handling
+    //  for that for QOL stuff.
     let mut a_weights: Vec<f64> = vec!(1.5; 68);
     
 
