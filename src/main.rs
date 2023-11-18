@@ -259,11 +259,11 @@ impl NeuralNetwork {
                                         //print!("added outgoing edges to: ");
                                         //println!("{:?}",from_node);
                                     },
-                                    None => panic!("cap aj mark 1"),
+                                    None => panic!("no 'from node' in option"),
                                 }
                             }
                         },
-                        _ => panic!("long a d s")
+                        _ => panic!("no 'node layer' in option")
                     }
                 }
                 //println!("AAAAAAAAAAAAAAAAHHHHHHHHHHHERERERERERE~~~~!@");
@@ -283,11 +283,11 @@ impl NeuralNetwork {
                                         //print!("added incoming edges to: ");
                                         //println!("{:?}",to_node);
                                     },
-                                    None => panic!("cap aj mark 2"),
+                                    None => panic!("no 'node layer' in option (2)"),
                                 } 
                             }
                         },
-                        _ => panic!("long z s d")
+                        _ => panic!("no 'node layer' in option (2)")
                     }
                 }
             }
